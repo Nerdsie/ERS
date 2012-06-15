@@ -138,6 +138,7 @@ public class Game extends Applet implements Runnable {
 	}
 	
 	public void tryPickup(Player p){
+		currentState.state = GameState.GAME;
 		int max = Math.min(5, pile.size());
 			
 		for(int i = 1; i < max + 1; i++){
@@ -147,9 +148,7 @@ public class Game extends Applet implements Runnable {
 				break;
 			
 			if(pile.get(lookup).value>10 && p==pile.get(lookup).owner){
-				current = pile.get(lookup).owner;
 				pile.get(lookup).owner.getPile();
-				currentState.state = GameState.GAME;
 				tries = -1;
 				return;
 			}
@@ -182,7 +181,7 @@ public class Game extends Applet implements Runnable {
 		ArrayList<Card> holder = new ArrayList<Card>();
 		holder.add(p.deck.get(0));
 		p.addNotification("-1", Color.RED);
-		p.deck.get(0).status=Status.BURNT;
+		holder.get(0).status=Status.BURNT;
 		p.deck.remove(p.deck.get(0));
 		
 		for(Card c: pile){
@@ -239,14 +238,22 @@ public class Game extends Applet implements Runnable {
 		}
 	
 		try{
+			
 			players = Integer.parseInt(JOptionPane.showInputDialog("How many players?"));
+			if(players>4)
+				players = 4;
+			if(players<0)
+				players = 0;
+			
 		}catch(Exception e){players = 0;}
 
 		this.requestFocus();
 		
-		try{
-			level = (20 / (Integer.parseInt(JOptionPane.showInputDialog("What skill level? 1 (Easy) - 4 (Evil)?"))));
-		}catch(Exception e){level = 20;}
+		if(players < 4){
+			try{
+				level = (Integer.parseInt(JOptionPane.showInputDialog("What skill level? 1 (Evil) - 5 (Easy)?"))) * 5 - 10;
+			}catch(Exception e){level = 20;}
+		}
 		
 		this.requestFocus();
 		

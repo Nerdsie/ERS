@@ -51,7 +51,7 @@ public class GameKeyListener implements KeyListener{
 		if(Player.FIRST.isHuman){
 			if(e.getKeyCode() == KeyEvent.VK_NUMPAD1){
 				if(game.currentState.state == GameState.GAME){
-					if(Game.current==Player.FIRST)
+					if(Game.current==Player.FIRST && !Player.FIRST.isOut)
 						game.playCard();
 					else
 						game.burnCard(Player.FIRST);
@@ -67,9 +67,9 @@ public class GameKeyListener implements KeyListener{
 		}
 		
 		if(Player.SECOND.isHuman){
-			if(e.getKeyCode() == KeyEvent.VK_BRACELEFT){
+			if(e.getKeyCode() == KeyEvent.VK_UNDERSCORE){
 				if(game.currentState.state == GameState.GAME){
-					if(Game.current==Player.SECOND)
+					if(Game.current==Player.SECOND && !Player.SECOND.isOut)
 						game.playCard();
 					else
 						game.burnCard(Player.SECOND);
@@ -79,7 +79,7 @@ public class GameKeyListener implements KeyListener{
 				}
 			}
 	
-			if(e.getKeyCode() == KeyEvent.VK_BACK_SLASH){
+			if(e.getKeyCode() == KeyEvent.VK_BACK_SPACE){
 				game.trySlap(Player.SECOND);
 			}
 		}
@@ -87,7 +87,7 @@ public class GameKeyListener implements KeyListener{
 		if(Player.THIRD.isHuman){
 			if(e.getKeyCode() == KeyEvent.VK_G){
 				if(game.currentState.state == GameState.GAME){
-					if(Game.current==Player.THIRD)
+					if(Game.current==Player.THIRD && !Player.THIRD.isOut)
 						game.playCard();
 					else
 						game.burnCard(Player.THIRD);
@@ -105,7 +105,7 @@ public class GameKeyListener implements KeyListener{
 		if(Player.FOURTH.isHuman){
 			if(e.getKeyCode() == KeyEvent.VK_Q){
 				if(game.currentState.state == GameState.GAME){
-					if(Game.current==Player.FOURTH)
+					if(Game.current==Player.FOURTH && !Player.FOURTH.isOut)
 						game.playCard();
 					else
 						game.burnCard(Player.FOURTH);

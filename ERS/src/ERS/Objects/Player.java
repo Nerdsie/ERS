@@ -62,7 +62,7 @@ public enum Player {
 	
 	public void getPile(){
 		int gained = Game.pile.size();
-		
+
 		addNotification("+" + gained);
 		
 		for(Card c: Game.pile){

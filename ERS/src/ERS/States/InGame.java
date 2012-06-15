@@ -45,6 +45,36 @@ public class InGame extends State{
 		int speed = new Random().nextInt(12);
 		speed += game.level;
 		
+		for(Player p: Player.values()){
+			if(p.deck.size()==0){
+				p.isOut=true;
+				if(p==Game.current){
+					Game.current = Player.getNext();
+				}
+			}else{
+				p.isOut=false;
+			}
+			
+			if(p.deck.size()==52 && game.currentState.state==GameState.GAME){
+				game.winner = p;
+				game.currentState.state = GameState.FINISHED;
+			}
+		}
+		
+		if(Game.current!=null && game.currentState != null && game.currentState.state!=null && !Game.current.isHuman && ( game.currentState.state==GameState.GAME || game.currentState.state==GameState.PICKUPWAITING )){
+			game.count++;
+			
+			speed = new Random().nextInt(12);
+			speed+= game.level;
+			
+			if(game.count>15 + speed){
+				game.playCard();
+				game.counttwo = 0;
+				game.count = 0;
+				return;
+			}
+		}
+		
 		if(game.counttwo>20 +speed){
 			Player p = Player.getPlayer(new Random().nextInt(4) + 1);
 			
@@ -71,35 +101,6 @@ public class InGame extends State{
 			}
 			
 			game.counttwo = 0;
-		}
-		
-		if(Game.current!=null && game.currentState != null && game.currentState.state!=null && !Game.current.isHuman && ( game.currentState.state==GameState.GAME || game.currentState.state==GameState.PICKUPWAITING )){
-			game.count++;
-			
-			speed = new Random().nextInt(12);
-			speed+= game.level;
-			
-			if(game.count>15 + speed){
-				game.playCard();
-				game.counttwo = 0;
-				game.count = 0;
-			}
-		}
-			
-		for(Player p: Player.values()){
-			if(p.deck.size()==0){
-				p.isOut=true;
-				if(p==Game.current){
-					Game.current = Player.getNext();
-				}
-			}else{
-				p.isOut=false;
-			}
-			
-			if(p.deck.size()==52 && game.currentState.state==GameState.GAME){
-				game.winner = p;
-				game.currentState.state = GameState.FINISHED;
-			}
 		}
 	}
 	
@@ -270,7 +271,7 @@ public class InGame extends State{
 		
 		for(SlapHand h: Game.hands){
 			if(h.owner == Player.FIRST)
-				Game.canvas.drawImage(h.img, game.width / 2 - 44, game.height - 210, 60, 60, null);
+				Game.canvas.drawImage(h.img, game.width / 2 - 44, game.height - 190, 60, 60, null);
 			if(h.owner == Player.SECOND)
 				Game.canvas.drawImage(h.img, 120, game.height / 2 - 50 , 60, 60, null);
 			if(h.owner == Player.THIRD)
