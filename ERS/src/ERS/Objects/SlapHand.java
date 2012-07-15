@@ -3,6 +3,7 @@ package ERS.Objects;
 import java.awt.Image;
 
 import ERS.Game;
+import ERS.Objects.GamePlay.Player;
 
 public class SlapHand {
 	public Image img;
@@ -17,7 +18,7 @@ public class SlapHand {
 	public void tick(){
 		ticks++;
 		
-		if(ticks>=20)
+		if(ticks>=60)
 			Game.hands.remove(this);
 	}
 }

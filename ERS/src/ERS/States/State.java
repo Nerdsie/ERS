@@ -1,14 +1,17 @@
 package ERS.States;
 
-import ERS.Game;
 import ERS.Objects.GameState;
 
 public class State{
-	public Game game;
+	public static State inGame = new InGame();
+	public static State mainMenu = new Menu();
+	public static State pauseScreen = new Pause();
+	public static State settings = new Settings();
+	
 	public GameState state = GameState.MENU;
 	
-	public State(Game g){
-		game = g;
+	public State(){
+		
 	}
 	
 	public void tick(){

@@ -2,6 +2,8 @@ package ERS.Objects;
 
 import java.awt.Color;
 
+import ERS.Objects.GamePlay.Player;
+
 public class Notification {
 	public int xOff = 0, yOff = 0;
 	public int alpha = 255;

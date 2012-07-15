@@ -1,4 +1,5 @@
 package ERS;
+
 import java.applet.Applet;
 import java.awt.Color;
 import java.awt.Font;
@@ -9,16 +10,17 @@ import java.util.Random;
 
 import javax.swing.JOptionPane;
 
+import ERS.Files.Stream;
 import ERS.Listener.GameFocusListener;
 import ERS.Listener.GameKeyListener;
-import ERS.Objects.Card;
 import ERS.Objects.GameState;
-import ERS.Objects.Player;
 import ERS.Objects.SlapHand;
 import ERS.Objects.Status;
-import ERS.States.Menu;
+import ERS.Objects.GamePlay.Card;
+import ERS.Objects.GamePlay.Player;
+import ERS.SFX.Sound;
+import ERS.States.Setting;
 import ERS.States.State;
-
 
 public class Game extends Applet implements Runnable {
 	private static final long serialVersionUID = 1L;
@@ -26,8 +28,7 @@ public class Game extends Applet implements Runnable {
 	
 	int x = 10, y = 10;
 	int w = 50, h = 50;
-	public int width = 640;
-	public int height = 480;
+	public static final int WIDTH = 640, HEIGHT = 480;
 	int ticks = 0;
 	
 	public Image backBuffer;
@@ -35,15 +36,15 @@ public class Game extends Applet implements Runnable {
 	
 	public static ArrayList<Card> pile = new ArrayList<Card>();
 	public static Player current = Player.FIRST;
-	public int tries = -1;
-	public Player winner = null;
+	public static int tries = -1;
+	public static Player winner = null;
 	public static ArrayList<SlapHand> hands = new ArrayList<SlapHand>();
 	
-	public State currentState = new Menu(this);
-	public int level = 20;
-	public int players = 0;
-	public int count = 0;
-	public int counttwo = 0;
+	public static State currentState = State.mainMenu;
+	public static int level = 20;
+	public static int players = 0;
+	public static int count = 0;
+	public static int counttwo = 0;
 	
 	public boolean focus = false;
 	public int yFocOff = 0, yFocDir = 1;
@@ -70,15 +71,15 @@ public class Game extends Applet implements Runnable {
 
 		if(!focus){
 			canvas.setColor(new Color(0, 0, 0, 210));
-			canvas.fillRect(0, 0, width, height);
+			canvas.fillRect(0, 0, WIDTH, HEIGHT);
 
 			int xOff = -135, yOff = yFocOff - 10;
 			
 			canvas.setFont(new Font("Arial", 1, 30));
 			canvas.setColor(Color.GRAY);
-			canvas.drawString("Click Here to Play!", width / 2 + 2 + xOff, height / 2 + 2 + yOff);
+			canvas.drawString("Click Here to Play!", WIDTH / 2 + 2 + xOff, HEIGHT / 2 + 2 + yOff);
 			canvas.setColor(Color.WHITE);
-			canvas.drawString("Click Here to Play!", width / 2 + xOff, height / 2 + yOff);
+			canvas.drawString("Click Here to Play!", WIDTH / 2 + xOff, HEIGHT / 2 + yOff);
 			
 			repaint();
 		}
@@ -88,17 +89,13 @@ public class Game extends Applet implements Runnable {
 		
 	}
 	
-	public void playCard(){
+	public static void playCard(){
 		int value = 0;
 
 		if(currentState.state == GameState.PICKUPWAITING){
 			tryPickup(pickupOwner());
 			
 			return;
-		}
-		
-		if(isSlap() && !current.isHuman){
-			trySlap(current);
 		}
 		
 		if(current.deck.size()==0){
@@ -112,6 +109,8 @@ public class Game extends Applet implements Runnable {
 		current.deck.get(0).status=Status.INGAME;
 		pile.add(current.deck.get(0));
 		current.deck.remove(current.deck.get(0));
+
+		Sound.playRandomFlip();
 		
 		tries--;
 		
@@ -121,9 +120,19 @@ public class Game extends Applet implements Runnable {
 			currentState.state = GameState.GAME;
 		}
 		
+		if(value == 10 && Setting.tenStops.on){
+			currentState.state = GameState.GAME;
+			tries = -1;
+		}
+		
 		if(tries==0){
 			currentState.state = GameState.PICKUPWAITING;
 			current = pickupOwner();
+			
+			if(current.isHuman)
+				Sound.playRandomCollect();
+			
+			return;
 		}
 			
 		if(tries<0){
@@ -137,7 +146,13 @@ public class Game extends Applet implements Runnable {
 		}
 	}
 	
-	public void tryPickup(Player p){
+	public static void tryPickup(Player p){
+		if(p.lives < 1){
+			if(p.isHuman)
+				p.addNotification("No Lives.");
+			
+			return;
+		}
 		currentState.state = GameState.GAME;
 		int max = Math.min(5, pile.size());
 			
@@ -157,7 +172,7 @@ public class Game extends Applet implements Runnable {
 		burnCard(p);
 	}
 	
-	public Player pickupOwner(){
+	public static Player pickupOwner(){
 		int max = Math.min(5, pile.size());
 			
 		for(int i = 1; i < max + 1; i++){
@@ -174,9 +189,24 @@ public class Game extends Applet implements Runnable {
 		return null;
 	}
 	
-	public void burnCard(Player p){
-		if(p == null || p.deck == null || pile == null || p.deck.isEmpty() || pile.isEmpty())
+	public static void burnCard(Player p){
+		if(p == null || p.deck == null || pile == null || pile.isEmpty()){
 			return;
+		}
+
+		if(p.lives < 1)
+			return;
+		
+		if(p.deck.isEmpty() || pile.isEmpty()){
+			p.lives--;
+			if(currentState == State.inGame){
+				p.addNotification("-1 Life", Color.RED);
+			}
+			
+			return;
+		}
+
+		Sound.playRandomBurn();
 		
 		ArrayList<Card> holder = new ArrayList<Card>();
 		holder.add(p.deck.get(0));
@@ -187,13 +217,21 @@ public class Game extends Applet implements Runnable {
 		for(Card c: pile){
 			holder.add(c);
 		}
-		
+
 		pile = holder;
 	}
 	
-	public void trySlap(Player p){
-		counttwo = 0;
-		count = -10;
+	public static void trySlap(Player p){
+		if(p.lives < 1)
+			return;
+		
+		if(!p.isHuman){
+			if(!Setting.AISlap.on)
+				return;
+			
+			if(!Setting.AISlapIn.on && p.deck.isEmpty())
+				return;
+		}
 		
 		if(isSlap()){
 			currentState.state = GameState.GAME;
@@ -201,10 +239,17 @@ public class Game extends Applet implements Runnable {
 			p.getPile();
 			tries = -1;
 			hands.add(p.getSlapHand());
+			counttwo = 0;
+			count = -10;
+			Sound.playRandomSlap();
 		}else{
-			tryPickup(p);
+			if(currentState.state == GameState.PICKUPWAITING && pickupOwner() == p){
+				tryPickup(p);
+			}else{
+				burnCard(p);
+			}
 			
-			if(p.deck.size()==0){
+			if(p.deck.size()==0 && current == p){
 				current = Player.getNext();
 			}
 		}
@@ -222,23 +267,108 @@ public class Game extends Applet implements Runnable {
 		}
 	}
 	
-	public boolean isSlap(){
-		if((pile.size()>1 && pile.get(pile.size() - 1).value == pile.get(pile.size() - 2).value && pile.get(pile.size() - 1).status==Status.INGAME && pile.get(pile.size() - 2).status==Status.INGAME) || (pile.size()>2 && pile.get(pile.size() - 1).value == pile.get(pile.size() - 3).value && pile.get(pile.size() - 1).status==Status.INGAME && pile.get(pile.size() - 3).status==Status.INGAME)){
+	public static boolean isSlap(){
+		if(pile.size()>1 && pile.get(pile.size() - 1).value == pile.get(pile.size() - 2).value && pile.get(pile.size() - 1).status==Status.INGAME && pile.get(pile.size() - 2).status==Status.INGAME){			
 			return true;
+		}
+		
+		if(pile.size()>2 && pile.get(pile.size() - 1).value == pile.get(pile.size() - 3).value && pile.get(pile.size() - 1).status==Status.INGAME && pile.get(pile.size() - 3).status==Status.INGAME){
+			return true;
+		}
+		
+		if(Setting.addToTen.on){
+			if(pile.size()>1 && pile.get(pile.size() - 1).value + pile.get(pile.size() - 2).value == 10 && pile.get(pile.size() - 1).status==Status.INGAME && pile.get(pile.size() - 2).status==Status.INGAME){	
+				return true;
+			}
+			
+			if(pile.size()>2 && pile.get(pile.size() - 1).value + pile.get(pile.size() - 3).value == 10 && pile.get(pile.size() - 1).status==Status.INGAME && pile.get(pile.size() - 3).status==Status.INGAME){
+				return true;
+			}
+		}
+		
+		if(Setting.kingQueen.on){
+			if(pile.size()>1 && pile.get(pile.size() - 1).value == 12 && pile.get(pile.size() - 2).value == 13 && pile.get(pile.size() - 1).status==Status.INGAME && pile.get(pile.size() - 2).status==Status.INGAME){
+				return true;
+			}
+			
+			if(pile.size()>1 && pile.get(pile.size() - 1).value == 13 && pile.get(pile.size() - 2).value == 12 && pile.get(pile.size() - 1).status==Status.INGAME && pile.get(pile.size() - 2).status==Status.INGAME){
+				return true;
+			}
+			
+			if(pile.size()>2 && pile.get(pile.size() - 1).value == 13 && pile.get(pile.size() - 3).value == 12 && pile.get(pile.size() - 1).status==Status.INGAME && pile.get(pile.size() - 3).status==Status.INGAME){
+				return true;
+			}
+			
+			if(pile.size()>2 && pile.get(pile.size() - 1).value == 12 && pile.get(pile.size() - 3).value == 13 && pile.get(pile.size() - 1).status==Status.INGAME && pile.get(pile.size() - 3).status==Status.INGAME){
+				return true;
+			}
+		}
+
+		
+		if(Setting.sixNine.on){
+			if(pile.size()>1 && pile.get(pile.size() - 1).value == 6 && pile.get(pile.size() - 2).value == 9 && pile.get(pile.size() - 1).status==Status.INGAME && pile.get(pile.size() - 2).status==Status.INGAME){
+				return true;
+			}
+			
+			if(pile.size()>1 && pile.get(pile.size() - 1).value == 9 && pile.get(pile.size() - 2).value == 6 && pile.get(pile.size() - 1).status==Status.INGAME && pile.get(pile.size() - 2).status==Status.INGAME){
+				return true;
+			}
+			
+			if(pile.size()>2 && pile.get(pile.size() - 1).value == 6 && pile.get(pile.size() - 3).value == 9 && pile.get(pile.size() - 1).status==Status.INGAME && pile.get(pile.size() - 3).status==Status.INGAME){
+				return true;
+			}
+			
+			if(pile.size()>2 && pile.get(pile.size() - 1).value == 9 && pile.get(pile.size() - 3).value == 6 && pile.get(pile.size() - 1).status==Status.INGAME && pile.get(pile.size() - 3).status==Status.INGAME){
+				return true;
+			}
+		}
+
+		if(Setting.topBottom.on && pile.size() > 3){
+			if(pile.size()>1 && pile.get(pile.size() - 1).value == getBottom().value && pile.get(pile.size() - 1).status==Status.INGAME && getBottom().status==Status.INGAME){		
+				return true;
+			}
 		}
 		
 		return false;
 	}
 	
-	public void restartGame(){
+	public static Card getBottom(){
+		for(int i = 0; i < pile.size(); i++){
+			if(pile.get(i).status == Status.INGAME)
+				return pile.get(i);
+		}
+		
+		return null;
+	}
+	
+	public static void restartGame(){
 		for(Player p: Player.values()){
 			pile.clear();
 			p.deck.clear();
 			p.isOut = false;
 		}
+		
+		newCards();
+
+		getPlayers();
+		getLevel();
+		
+		currentState.state = GameState.GAME;
+
+		current = Player.FIRST;
+		
+	}
 	
+	public static void getLevel(){
+		if(players < 4){
+			try{
+				level = (Integer.parseInt(JOptionPane.showInputDialog("What skill level? 1 (Evil) - 4 (Easy)?"))) * 10 - 10;
+			}catch(Exception e){level = 20;}
+		}
+	}
+	
+	public static void getPlayers(){
 		try{
-			
 			players = Integer.parseInt(JOptionPane.showInputDialog("How many players?"));
 			if(players>4)
 				players = 4;
@@ -247,16 +377,6 @@ public class Game extends Applet implements Runnable {
 			
 		}catch(Exception e){players = 0;}
 
-		this.requestFocus();
-		
-		if(players < 4){
-			try{
-				level = (Integer.parseInt(JOptionPane.showInputDialog("What skill level? 1 (Evil) - 5 (Easy)?"))) * 5 - 10;
-			}catch(Exception e){level = 20;}
-		}
-		
-		this.requestFocus();
-		
 		for(int i = 0; i < players; i++){
 			Player.getPlayer(i + 1).isHuman = true;
 		}
@@ -264,7 +384,9 @@ public class Game extends Applet implements Runnable {
 		for(int i = players; i < 4; i++){
 			Player.getPlayer(i + 1).isHuman = false;
 		}
-		
+	}
+	
+	public static void newCards(){
 		int[] diff = new int[13];
 		
 		for(int i = 0; i < 13; i++){
@@ -287,16 +409,18 @@ public class Game extends Applet implements Runnable {
 				diff[add]--;
 			}
 		}
-		
-		currentState.state = GameState.GAME;
 	}
 	
 	public void start(){
-		this.setSize( width, height );
+		newCards();
+		
+		this.setSize( WIDTH, HEIGHT );
+		
+		load();		
 		
 		running = true;
 		
-		backBuffer = createImage(this.width, this.height);
+		backBuffer = createImage(Game.WIDTH, Game.HEIGHT);
 		canvas = backBuffer.getGraphics();
 
 		this.addKeyListener(new GameKeyListener(this));
@@ -305,6 +429,24 @@ public class Game extends Applet implements Runnable {
 		new Thread(this).start();
 
 		this.requestFocus();
+	}
+	
+	public void save(){
+		try {
+			new Stream().save();
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+	}
+	
+	public void load(){
+		try {
+			for(String s: new Stream().load()){
+				Setting.load(s);
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
 	}
 	
 	public void stop(){
