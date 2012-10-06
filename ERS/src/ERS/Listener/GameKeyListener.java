@@ -6,6 +6,7 @@ import java.awt.event.KeyListener;
 import ERS.Game;
 import ERS.Objects.GameState;
 import ERS.Objects.GamePlay.Player;
+import ERS.States.ControlMenu;
 import ERS.States.InGame;
 import ERS.States.Menu;
 import ERS.States.Pause;
@@ -89,6 +90,13 @@ public class GameKeyListener implements KeyListener{
 				
 				return;
 			}
+
+			if(Game.currentState instanceof ControlMenu){
+				Game.currentState = new Menu();
+				game.save();
+				
+				return;
+			}
 			
 			if(Game.currentState instanceof Pause){
 				Game.currentState = State.inGame;
@@ -97,7 +105,7 @@ public class GameKeyListener implements KeyListener{
 			}
 		}
 		
-		if(e.getKeyCode() == KeyEvent.VK_P){
+		if(e.getKeyCode() == KeyEvent.VK_P || e.getKeyCode() == KeyEvent.VK_ESCAPE){
 			if(Game.currentState instanceof InGame){
 				Game.currentState = State.pauseScreen;
 				

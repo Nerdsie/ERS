@@ -14,7 +14,7 @@ public class Menu extends State{
 	public int selected = 0;
 	public int cardYOff = 0;
 	public double yD = 1;
-	public int max = 1;
+	public int max = 2;
 	
 	public Menu() {
 		state = GameState.MENU;
@@ -51,8 +51,14 @@ public class Menu extends State{
 		
 		yOff+=26;
 		
-		canvas.drawString("Settings.", x, 140 + yOff);
+		canvas.drawString("Help.", x, 140 + yOff);
 		if(selected == 1)
+			canvas.drawImage(Images.STAR, x - 28 + cardYOff, 140 - 17 + yOff, 18, 18, null);
+		
+		yOff+=26;
+		
+		canvas.drawString("Settings.", x, 140 + yOff);
+		if(selected == 2)
 			canvas.drawImage(Images.STAR, x - 28 + cardYOff, 140 - 17 + yOff, 18, 18, null);
 
 		canvas.drawImage(Images.INST, 8, 8, 400, 460, null);
@@ -64,6 +70,9 @@ public class Menu extends State{
 			((InGame) State.inGame).start();
 		}
 		if(selected == 1){
+			Game.currentState = State.controlMenu;
+		}
+		if(selected == 2){
 			((Settings) State.settings).retToGame = false;
 			Game.currentState = State.settings;
 		}

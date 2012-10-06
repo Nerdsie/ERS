@@ -7,6 +7,7 @@ public class State{
 	public static State mainMenu = new Menu();
 	public static State pauseScreen = new Pause();
 	public static State settings = new Settings();
+	public static State controlMenu = new ControlMenu();
 	
 	public GameState state = GameState.MENU;
 	

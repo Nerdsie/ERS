@@ -363,19 +363,19 @@ public class Game extends Applet implements Runnable {
 		if(players < 4){
 			try{
 				level = (Integer.parseInt(JOptionPane.showInputDialog("What skill level? 1 (Evil) - 4 (Easy)?"))) * 10 - 10;
-			}catch(Exception e){level = 20;}
+			}catch(Exception e){level = 3;}
 		}
 	}
 	
 	public static void getPlayers(){
 		try{
-			players = Integer.parseInt(JOptionPane.showInputDialog("How many players?"));
+			players = Integer.parseInt(JOptionPane.showInputDialog("How many HUMAN players 1-4? (AI will take any non-human spots)"));
 			if(players>4)
 				players = 4;
 			if(players<0)
 				players = 0;
 			
-		}catch(Exception e){players = 0;}
+		}catch(Exception e){ players = 1; }
 
 		for(int i = 0; i < players; i++){
 			Player.getPlayer(i + 1).isHuman = true;
